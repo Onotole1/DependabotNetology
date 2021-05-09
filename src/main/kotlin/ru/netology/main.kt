@@ -16,6 +16,7 @@ const val BASE_URL = "https://api.github.com/repos/netology-code/"
 val repositories = listOf(
         "andad-code",
         "andin-code",
+        "andin-homeworks",
         "kt-code",
 )
 
