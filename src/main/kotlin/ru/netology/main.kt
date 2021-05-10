@@ -14,10 +14,10 @@ import kotlinx.serialization.json.Json as SerializationJson
 const val BASE_URL = "https://api.github.com/repos/netology-code/"
 
 val repositories = listOf(
-        "andad-code",
-        "andin-code",
-        "andin-homeworks",
-        "kt-code",
+    "andad-code",
+    "andin-code",
+    "andin-homeworks",
+    "kt-code",
 )
 
 /**
@@ -31,10 +31,10 @@ fun main(args: Array<String>) {
             Logging()
             Json {
                 serializer = KotlinxSerializer(
-                        SerializationJson {
-                            ignoreUnknownKeys = true
-                            isLenient = true
-                        }
+                    SerializationJson {
+                        ignoreUnknownKeys = true
+                        isLenient = true
+                    }
                 )
             }
         }
@@ -51,13 +51,15 @@ fun main(args: Array<String>) {
                         return@async
                     }.filter {
                         it.user.login == "dependabot[bot]"
-                    }.forEach {
-                        client.post<Unit>(urlString = "${it.issueUrl}/comments") {
-                            body = IssueComment("""@dependabot merge""")
-                            header("Authorization", "bearer $token")
-                            header("Content-Type", "application/json")
+                    }.map {
+                        async {
+                            client.post<Unit>(urlString = "${it.issueUrl}/comments") {
+                                body = IssueComment("""@dependabot merge""")
+                                header("Authorization", "bearer $token")
+                                header("Content-Type", "application/json")
+                            }
                         }
-                    }
+                    }.awaitAll()
                 }
             }
         }.awaitAll()
