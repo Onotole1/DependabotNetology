@@ -5,9 +5,6 @@ import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
 import io.ktor.client.features.logging.*
 import io.ktor.client.request.*
-import io.ktor.util.*
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json as SerializationJson
 
@@ -17,7 +14,6 @@ val repositories = listOf(
     "andad-code",
     "andin-code",
     "andin-homeworks",
-    "kt-code",
 )
 
 /**
@@ -39,29 +35,25 @@ fun main(args: Array<String>) {
             }
         }
 
-        repositories.map { repository ->
-            async {
-                var page = 0
-                while (true) {
-                    client.get<List<Pull>>(urlString = "$BASE_URL$repository/pulls") {
+        repositories.forEach { repository ->
+            var page = 1
+            while (true) {
+                client.get<List<Pull>>(urlString = "$BASE_URL$repository/pulls") {
+                    header("Authorization", "bearer $token")
+                    parameter("per_page", 100)
+                    parameter("page", page++)
+                }.ifEmpty {
+                    return@forEach
+                }.filter {
+                    it.user.login == "dependabot[bot]"
+                }.forEach {
+                    client.post<Unit>(urlString = "${it.issueUrl}/comments") {
+                        body = IssueComment("""@dependabot merge""")
                         header("Authorization", "bearer $token")
-                        parameter("per_page", 100)
-                        parameter("page", page++)
-                    }.ifEmpty {
-                        return@async
-                    }.filter {
-                        it.user.login == "dependabot[bot]"
-                    }.map {
-                        async {
-                            client.post<Unit>(urlString = "${it.issueUrl}/comments") {
-                                body = IssueComment("""@dependabot merge""")
-                                header("Authorization", "bearer $token")
-                                header("Content-Type", "application/json")
-                            }
-                        }
-                    }.awaitAll()
+                        header("Content-Type", "application/json")
+                    }
                 }
             }
-        }.awaitAll()
+        }
     }
 }

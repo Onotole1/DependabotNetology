@@ -7,6 +7,8 @@ import kotlinx.serialization.Serializable
 data class Pull(
     @SerialName("user")
     val user: User,
+    @SerialName("title")
+    val title: String,
     @SerialName("issue_url")
     val issueUrl: String,
 )
